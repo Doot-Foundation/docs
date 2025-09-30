@@ -1,0 +1,39 @@
+# Node and package managers
+**/node_modules/
+pnpm-lock.yaml
+yarn.lock
+package-lock.json
+
+# Builds and caches
+**/build/
+**/dist/
+**/.next/
+**/.turbo/
+**/.cache/
+**/.tsbuildinfo
+**/out/
+**/coverage/
+**/.eslintcache
+
+# Env and logs
+.env
+.env.*
+**/*.log
+**/npm-debug.log*
+**/yarn-error.log*
+
+# IDE/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Local/backup artifacts
+**/*.backup
+supabase_ui/db_cluster-*.backup
+
+# Large generated docs from Pallas (avoid bloating the repo)
+Pallas/edited_o1js/o1js/src/mina/src/lib/snarky/website/website/
+
+# GitBook cache (if any)
+.gitbook/
+
