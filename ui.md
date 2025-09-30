@@ -1,8 +1,8 @@
 # Backend & UI
 
-The `ui/` project is both the public website/API and the production
-backend that keeps Doot’s state fresh. The backend is implemented as a
-set of cron workers living inside the project alongside Next.js pages.
+The web service is both the public website/API and the production
+backend that keeps Doot’s state fresh. Scheduled workers run alongside
+the web endpoints.
 
 ## Responsibilities
 

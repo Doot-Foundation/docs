@@ -6,19 +6,19 @@ before touching code or infra.
 
 ## High‑Level Components
 
-- SDK (`npm/main`)
+- SDK
   - Provides a simple `Client` with a smart fallback: API → L2 → L1
   - Normalizes the response shape across all sources
   - Caches compilation and recent on‑chain reads to reduce latency
 
-- Backend (“UI” project) (`ui/`)
+- Web Service (backend + site)
   - Next.js service that also hosts the production cron workers
   - Cron workers fetch prices from many providers, aggregate, sign,
     cache in Upstash Redis, pin objects to IPFS (Pinata), and update
     the on‑chain OffchainState on Zeko L2 and Mina L1
   - Public API (`/api/get/price`) for fast reads with API keys
 
-- Smart Contracts (`contracts/` and SDK `src/constants/Doot.ts`)
+- Smart Contracts
   - `Doot` zkApp stores an OffchainState commitment and an IPFS CID
   - `getPrices()` returns the full vector of 10 token prices
   - `update()` moves the commitment + CID forward; `settle()` commits

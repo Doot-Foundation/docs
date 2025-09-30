@@ -3,8 +3,6 @@
 How the on‑chain layer stores price data and why OffchainState is used.
 
 ## Doot zkApp
-
-- Files: `contracts/src/contracts/Doot.ts` and SDK mirror `npm/main/src/constants/Doot.ts`
 - Storage:
   - `commitment: Field` — Merkle root of the canonical IPFS object
   - `ipfsCID: IpfsCID` — packed CID string (via `o1js-pack`)
@@ -39,17 +37,13 @@ How the on‑chain layer stores price data and why OffchainState is used.
 - Zeko L2 (devnet): fast finality, same API for `o1js`
 - Mina L1 (devnet or mainnet): maximum security and decentralization
 
-Deployment scripts for both networks are in `contracts/src/deploy/` and the Zeko updater lives inside `ui/cron-zkapp-update-doot-zeko`.
+Operational updaters submit transactions to these networks on a schedule; see Backend & UI for timing.
 
 ## Aggregation Programs
-
-- Files: `contracts/src/contracts/Aggregation.ts`
 - ZkPrograms that prove aggregate summaries for 20‑ or 100‑length price vectors
 - Used by backend jobs to create verifiable aggregation artifacts (cached separately)
 
 ## Registry Contract
-
-- File: `contracts/src/contracts/Registry.ts`
 - Purpose: record latest implementation address and code references
   - GitHub source link (packed string)
   - IPFS source link (packed string)
@@ -62,4 +56,3 @@ Deployment scripts for both networks are in `contracts/src/deploy/` and the Zeko
 - Pass prices in the correct fixed order
 - After `update()`, create and submit `settle()` proof to commit the OffchainState
 - Store the produced CID in Redis to enable UI and SDK linking
-
