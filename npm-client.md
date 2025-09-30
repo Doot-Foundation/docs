@@ -1,10 +1,8 @@
 # Doot Oracle Client (npm)
 
-Content adapted from `npm/main/README.md`.
-
-## What is Doot?
-
-Doot provides verified price data for 10 major cryptocurrencies using zero-knowledge proofs. Your app gets fast, reliable prices with automatic fallback across multiple sources.
+Production SDK for consuming Doot price feeds. It prioritizes speed while
+preserving verifiability and provides a single response format regardless of
+source.
 
 ## Quick Start
 
@@ -15,122 +13,89 @@ npm install @dootfoundation/client
 ```javascript
 import { Client } from '@dootfoundation/client';
 
-const client = new Client('your-api-key');
+const client = new Client(process.env.DOOT_API_KEY || '');
 const price = await client.getData('bitcoin');
-
-console.log(`Bitcoin: $${price.price_data.price}`);
+console.log(price.source, price.price_data.price);
 ```
 
-## zkApp-CLI Usage
+## Supported Tokens
 
-When using in zkApp-CLI projects, you may need to add `@ts-ignore` for TypeScript compilation:
+- mina, bitcoin, ethereum, solana, ripple, cardano, avalanche, polygon, chainlink, dogecoin
+
+Internally, the SDK maps these names to on‑chain vector indexes. See Architecture → Token Ordering.
+
+## Fallback Logic and Caching
+
+- `getData(token)` tries sources in order: API → L2 → L1
+- Each step logs internally; the thrown error contains the chain of failures
+- On‑chain reads share a one‑time compilation cache and a 3‑minute result cache per token/source
+
+Notes:
+- Default endpoints are devnet (Zeko and Mina). Override only if you know what you’re doing.
+- Both L1 and L2 point to the same hardcoded contract address in this build. If you deploy your own, set `client.DootL1Address`/`client.DootL2Address` after constructing the client.
+
+## Methods
+
+- `getData(token)`
+  - Smart fallback. Recommended for most apps.
+- `getFromAPI(token)`
+  - Fastest. Requires `DOOT_API_KEY`. Hits `/api/get/price` on `client.BaseURL`.
+- `getFromL2(token)`
+  - Reads `getPrices()` from `Doot` on Zeko, extracts the token index.
+- `getFromL1(token)`
+  - Same as L2 but against Mina.
+- `isKeyValid()`
+  - Calls `/api/get/user/getKeyStatus` to validate your key.
+
+## Response
+
+All methods return the same shape:
+
+```javascript
+{
+  source: 'API' | 'L2' | 'L1',
+  fromAPI: boolean,
+  fromL2: boolean,
+  fromL1: boolean,
+  price_data: {
+    token: string,
+    price: string,                // integer string with 10 decimals
+    decimals: '10',               // fixed decimal precision
+    aggregationTimestamp: string, // ms since epoch
+    signature: string,            // for API source
+    oracle: string                // base58 public key of oracle/contract
+  },
+  proof_data: string              // JSON string for API calls
+}
+```
+
+## Advanced Configuration
+
+- `client.BaseURL`
+  - Defaults to `https://doot.foundation`. Point it at your own API mirror if needed.
+- `client.MinaL1Endpoint` / `client.MinaL1ArchiveEndpoint`
+  - Defaults to Minascan devnet endpoints.
+- `client.ZekoL2Endpoint`
+  - Defaults to `https://devnet.zeko.io/graphql`.
+- `client.DootL1Address` / `client.DootL2Address`
+  - Defaults to the public oracle address. Override after instantiation to read your deployments.
+
+## Errors and Retries
+
+- `getData()` throws a combined error when all sources fail: `All sources failed - API: <…>, L2: <…>, L1: <…>`
+- L1/L2 errors commonly indicate network unavailability or OffchainState still settling. Retry after 20–60 seconds.
+
+## zkApp‑CLI Usage
+
+Some `o1js` builds require a `// @ts-ignore` in zkApp‑CLI projects. This is a
+TypeScript setup quirk only; runtime behavior is correct.
 
 ```typescript
 import dotenv from 'dotenv';
 dotenv.config();
-
 // @ts-ignore
 import { Client } from '@dootfoundation/client';
 
-const client = new Client(process.env.DOOT_API_KEY);
-const price = await client.getData('bitcoin');
+const client = new Client(process.env.DOOT_API_KEY!);
+const price = await client.getData('mina');
 ```
-
-This is only a TypeScript compilation issue - the package works at runtime in zkApp-CLI environments.
-
-## Supported Tokens
-
-- bitcoin (BTC)
-- ethereum (ETH)
-- mina (MINA)
-- solana (SOL)
-- chainlink (LINK)
-- ripple (XRP)
-- dogecoin (DOGE)
-- polygon (MATIC)
-- avalanche (AVAX)
-- cardano (ADA)
-
-## How It Works
-
-Doot uses a 3-layer fallback system:
-
-1. API (fastest, ~100ms) - Direct from Doot servers
-2. L2 (fast, ~10-30s) - Zeko Layer 2 blockchain
-3. L1 (secure, ~30-60s) - Mina mainnet blockchain
-
-If one source fails, it automatically tries the next one.
-
-## API Methods
-
-### `getData(token)`
-Smart fallback through all sources (recommended)
-```javascript
-const price = await client.getData('ethereum');
-```
-
-### `getFromAPI(token)`
-Direct from API (requires valid key)
-```javascript
-const price = await client.getFromAPI('bitcoin');
-```
-
-### `getFromL2(token)`
-From Zeko L2 blockchain
-```javascript
-const price = await client.getFromL2('solana');
-```
-
-### `getFromL1(token)`
-From Mina L1 blockchain
-```javascript
-const price = await client.getFromL1('mina');
-```
-
-### `isKeyValid()`
-Check if your API key works
-```javascript
-const valid = await client.isKeyValid();
-```
-
-### `validtokens`
-List of supported tokens
-```javascript
-import { validtokens } from '@dootfoundation/client';
-console.log(validtokens);
-```
-
-## Response Format
-
-All methods return the same format:
-
-```javascript
-{
-  source: 'API',
-  fromAPI: true,
-  fromL2: false,
-  fromL1: false,
-  price_data: {
-    token: 'bitcoin',
-    price: '65432.12',
-    decimals: '10',
-    aggregationTimestamp: '1640995200000',
-    signature: 'ABC123...',
-    oracle: 'B62q...'
-  },
-  proof_data: '{...}'
-}
-```
-
-## Requirements
-
-- Node.js 18+
-- Internet connection
-- API key for fastest access (free at doot.foundation)
-
-## Support
-
-- Documentation: https://docs.doot.foundation
-- Issues: GitHub Issues (Doot Foundation npm)
-- Website: https://doot.foundation
-

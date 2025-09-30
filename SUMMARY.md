@@ -1,8 +1,12 @@
 # Summary
 
 - [Introduction](README.md)
-- [npm Client (SDK)](npm-client.md)
+- [Architecture](architecture.md)
+- [SDK](npm-client.md)
+- [Backend & UI](ui.md)
+- [L1/L2 Contracts](contracts.md)
 - [Examples](examples.md)
-- [UI](ui.md)
-- [L1 Contracts](contracts.md)
-
+- [Configuration](configuration.md)
+- [Runbook](runbook.md)
+- [Troubleshooting](troubleshooting.md)
+ - [Data Model](data-model.md)

@@ -1,10 +1,6 @@
 # Doot Oracle Client Examples
 
-Content adapted from `example/README.md`:
-
----
-
-This directory contains practical examples demonstrating how to use the `@dootfoundation/client` package.
+Practical ways to use the `@dootfoundation/client` package in real code.
 
 ## Examples
 
@@ -83,14 +79,13 @@ All methods return identical format:
 
 ## Notes
 
-- L2/L1 methods require blockchain compilation (commented out in demo for speed)
-- Smart fallback automatically chooses best available source
-- All prices include zero-knowledge proof signatures
-- Works in any Node.js environment, no special setup required
+- L2/L1 methods compile contracts once per process; the SDK caches this
+- Smart fallback automatically chooses the best available source
+- API responses include signature and proof data fields
+- Works in any Node.js environment; no special blockchain setup required
 
 ## Next Steps
 
 - Read full documentation: https://docs.doot.foundation
 - Install package: `npm install @dootfoundation/client`
 - Get API key: https://doot.foundation/dashboard
-

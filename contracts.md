@@ -1,33 +1,65 @@
-# Doot L1 Mina Smart Contracts
+# L1/L2 Contracts
 
-Adapted from `contracts/README.md`.
+How the on‑chain layer stores price data and why OffchainState is used.
 
-This repository tracks the Mina smart contracts under Doot – a data feeds oracle for Mina Protocol.
+## Doot zkApp
 
-## Registry.ts
+- Files: `contracts/src/contracts/Doot.ts` and SDK mirror `npm/main/src/constants/Doot.ts`
+- Storage:
+  - `commitment: Field` — Merkle root of the canonical IPFS object
+  - `ipfsCID: IpfsCID` — packed CID string (via `o1js-pack`)
+  - `owner: PublicKey` — admin for upgrades
+  - `offchainStateCommitments` — commitments for the OffchainState
+- OffchainState:
+  - `tokenInformation: Map<Field, TokenInformationArray>`
+  - `TokenInformationArray = { prices: Field[10] }`
+  - We always read/write index `Field(0)` with the 10‑token vector
 
-Indexes the last updated implementation details:
+### Methods
 
-1. Source code at GitHub
-2. Source code pinned at IPFS
-3. Address of the latest implementation
+- `initBase(updatedCommitment, updatedIpfsCID, informationArray)`
+  - Bootstraps the contract once, sets owner, commitment, CID, and off‑chain vector
+- `update(updatedCommitment, updatedIpfsCID, informationArray)`
+  - Owner‑gated update of commitment + CID and off‑chain vector
+- `settle(proof)`
+  - Applies an OffchainState settlement proof after `update()` to bind the vector
+- `getPrices(): TokenInformationArray`
+  - Returns the 10‑token vector (order defined in Architecture → Token Ordering)
+- `verify(signature, deployer, price)`
+  - Stand‑alone signature check utility
 
-Developers can refer to this contract to check for changes to Doot smart contracts.
+### Why OffchainState?
 
-## Doot.ts
+- The full set of prices and proofs would be expensive to store directly on‑chain
+- OffchainState provides canonical commitments + merkleized state with on‑chain verification via settlement proofs
+- The IPFS object (CID) holds the full material: witness paths, values, and metadata
 
-Core contract responsible for bringing the current exchange rate on-chain (currently updated every 2 hours).
+## Networks
 
-Developers can call `getPrice(token: CircuitString)` to fetch the exchange rate of a tracked cryptocurrency and use it in their smart contracts.
+- Zeko L2 (devnet): fast finality, same API for `o1js`
+- Mina L1 (devnet or mainnet): maximum security and decentralization
 
-## AggregationProgram.ts
+Deployment scripts for both networks are in `contracts/src/deploy/` and the Zeko updater lives inside `ui/cron-zkapp-update-doot-zeko`.
 
-Creates aggregation proofs for each asset update, enabling a verifiable aggregation process. This general `ZkProgram` is used directly in price generation cron jobs.
+## Aggregation Programs
 
-## Barter
+- Files: `contracts/src/contracts/Aggregation.ts`
+- ZkPrograms that prove aggregate summaries for 20‑ or 100‑length price vectors
+- Used by backend jobs to create verifiable aggregation artifacts (cached separately)
 
-Two parts:
+## Registry Contract
 
-- Mina: everything Mina Protocol
-- Ethereum: everything EVM
+- File: `contracts/src/contracts/Registry.ts`
+- Purpose: record latest implementation address and code references
+  - GitHub source link (packed string)
+  - IPFS source link (packed string)
+  - Latest implementation `PublicKey`
+- Methods: `initBase()`, `upgrade(updatedGithubLink, updatedIPFSLink, updatedImplementation)`
+
+## Deployment Notes
+
+- Always compile OffchainState and contract before first use
+- Pass prices in the correct fixed order
+- After `update()`, create and submit `settle()` proof to commit the OffchainState
+- Store the produced CID in Redis to enable UI and SDK linking
 
